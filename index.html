@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventario & Control de Finanzas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Header / Navbar -->
+        <header class="bg-indigo-700 text-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+                    <h1 class="text-xl font-bold">Sistema de Inventario & IVA (13%)</h1>
+                </div>
+                <div class="space-x-2">
+                    <button onclick="abrirModalProducto()" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg font-medium text-sm transition">
+                        <i class="fa-solid fa-plus mr-1"></i> Nuevo Producto
+                    </button>
+                    <button onclick="abrirModalMovimiento()" class="bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg font-medium text-sm transition">
+                        <i class="fa-solid fa-arrow-right-arrow-left mr-1"></i> Registrar Movimiento
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+            <!-- Financial Summary Dashboard -->
+            <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Ventas Brutas -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-emerald-500">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-500">Ventas Brutas (Mes)</span>
+                        <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i class="fa-solid fa-dollar-sign"></i></div>
+                    </div>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="stat-ventas" class="text-2xl font-bold text-gray-800">$0.00</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Total ingresado por ventas</p>
+                </div>
+
+                <!-- IVA a Pagar -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-rose-500">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-500">IVA por Pagar (13%)</span>
+                        <div class="p-2 bg-rose-50 text-rose-600 rounded-lg"><i class="fa-solid fa-receipt"></i></div>
+                    </div>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="stat-iva" class="text-2xl font-bold text-rose-600">$0.00</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Débito Fiscal a declarar</p>
+                </div>
+
+                <!-- Ganancia Neta -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-indigo-500">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-500">Ganancia Neta (Mes)</span>
+                        <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i class="fa-solid fa-chart-line"></i></div>
+                    </div>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="stat-ganancia" class="text-2xl font-bold text-indigo-600">$0.00</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Margen Bruto - IVA (13%)</p>
+                </div>
+
+                <!-- Costos de Mercadería -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-amber-500">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-500">Costo de Mercadería</span>
+                        <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i class="fa-solid fa-tags"></i></div>
+                    </div>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="stat-costos" class="text-2xl font-bold text-gray-800">$0.00</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Costo de artículos vendidos</p>
+                </div>
+            </section>
+
+            <!-- Inventory Section -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fa-solid fa-cubes text-indigo-600 mr-2"></i> Inventario de Productos
+                    </h2>
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="input-buscar" oninput="filtrarProductos()" placeholder="Buscar por SKU o Nombre..." class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none w-64">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-gray-700 uppercase font-semibold text-xs border-b border-gray-100">
+                            <tr>
+                                <th class="p-4">SKU</th>
+                                <th class="p-4">Producto</th>
+                                <th class="p-4">Categoría</th>
+                                <th class="p-4 text-right">P. Compra</th>
+                                <th class="p-4 text-right">P. Venta</th>
+                                <th class="p-4 text-center">Stock</th>
+                                <th class="p-4 text-center">Estado</th>
+                                <th class="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-productos" class="divide-y divide-gray-100">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Recent Transactions Section -->
+            <section class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-5 border-b border-gray-100">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center">
+                        <i class="fa-solid fa-list-check text-indigo-600 mr-2"></i> Últimos Movimientos
+                    </h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-gray-700 uppercase font-semibold text-xs border-b border-gray-100">
+                            <tr>
+                                <th class="p-4">Fecha</th>
+                                <th class="p-4">Tipo</th>
+                                <th class="p-4">Producto</th>
+                                <th class="p-4 text-center">Cantidad</th>
+                                <th class="p-4">Motivo / Cliente</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-movimientos" class="divide-y divide-gray-100">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal: Nuevo Producto -->
+    <div id="modal-producto" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-gray-800">Agregar Nuevo Producto</h3>
+            <form id="form-producto" onsubmit="guardarProducto(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">SKU / Código</label>
+                    <input type="text" id="prod-sku" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nombre del Producto</label>
+                    <input type="text" id="prod-nombre" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Categoría</label>
+                        <input type="text" id="prod-categoria" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Stock Mínimo</label>
+                        <input type="number" id="prod-minimo" min="1" value="5" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Precio Compra ($)</label>
+                        <input type="number" step="0.01" id="prod-pcompra" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Precio Venta ($)</label>
+                        <input type="number" step="0.01" id="prod-pventa" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Stock Inicial</label>
+                    <input type="number" id="prod-stock" min="0" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalProducto()" class="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Registrar Movimiento -->
+    <div id="modal-movimiento" class="fixed inset-0 bg-black bg-opacity-40 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-lg max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-gray-800">Registrar Entrada / Venta</h3>
+            <form id="form-movimiento" onsubmit="guardarMovimiento(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Tipo de Movimiento</label>
+                    <select id="mov-tipo" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="SALIDA">Venta (Salida)</option>
+                        <option value="ENTRADA">Compra / Reabastecimiento (Entrada)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Producto</label>
+                    <select id="mov-producto" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <!-- Opciones dinámicas -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Cantidad</label>
+                    <input type="number" id="mov-cantidad" min="1" required class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Motivo / Detalle</label>
+                    <input type="text" id="mov-motivo" placeholder="Ej: Venta local / Reposición de stock" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="cerrarModalMovimiento()" class="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Script Logic -->
+    <script>
+        // Datos por defecto iniciales
+        let productos = JSON.parse(localStorage.getItem('inv_productos')) || [
+            { id: 1, sku: 'PROD-001', nombre: 'Switch Cisco 24 Puertos', categoria: 'Redes', pcompra: 120.00, pventa: 180.00, stock: 10, minimo: 3 },
+            { id: 2, sku: 'PROD-002', nombre: 'Cable UTP Cat 6 (Bobina 305m)', categoria: 'Cables', pcompra: 80.00, pventa: 115.00, stock: 2, minimo: 5 },
+            { id: 3, sku: 'PROD-003', nombre: 'Router Wi-Fi 6 Dual Band', categoria: 'Redes', pcompra: 45.00, pventa: 70.00, stock: 15, minimo: 4 }
+        ];
+
+        let movimientos = JSON.parse(localStorage.getItem('inv_movimientos')) || [
+            { id: 1, producto_id: 1, tipo: 'SALIDA', cantidad: 5, fecha: new Date().toISOString(), motivo: 'Venta Corporativa' },
+            { id: 2, producto_id: 2, tipo: 'SALIDA', cantidad: 10, fecha: new Date().toISOString(), motivo: 'Venta Minorista' }
+        ];
+
+        function guardarLocal() {
+            localStorage.setItem('inv_productos', JSON.stringify(productos));
+            localStorage.setItem('inv_movimientos', JSON.stringify(movimientos));
+        }
+
+        function calcularFinanzas() {
+            let ingresos = 0;
+            let costos = 0;
+
+            movimientos.filter(m => m.tipo === 'SALIDA').forEach(m => {
+                const prod = productos.find(p => p.id === m.producto_id);
+                if (prod) {
+                    ingresos += m.cantidad * prod.pventa;
+                    costos += m.cantidad * prod.pcompra;
+                }
+            });
+
+            const iva = ingresos * 0.13;
+            const gananciaNeta = (ingresos - costos) - iva;
+
+            document.getElementById('stat-ventas').innerText = `$${ingresos.toFixed(2)}`;
+            document.getElementById('stat-iva').innerText = `$${iva.toFixed(2)}`;
+            document.getElementById('stat-costos').innerText = `$${costos.toFixed(2)}`;
+            document.getElementById('stat-ganancia').innerText = `$${gananciaNeta.toFixed(2)}`;
+        }
+
+        function renderProductos(lista = productos) {
+            const tbody = document.getElementById('tabla-productos');
+            tbody.innerHTML = '';
+
+            lista.forEach(p => {
+                const bajoStock = p.stock <= p.minimo;
+                const badge = bajoStock
+                    ? `<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-xs font-semibold">Bajo Stock</span>`
+                    : `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold">Normal</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="p-4 font-mono text-gray-500">${p.sku}</td>
+                        <td class="p-4 font-semibold text-gray-800">${p.nombre}</td>
+                        <td class="p-4">${p.categoria}</td>
+                        <td class="p-4 text-right">$${p.pcompra.toFixed(2)}</td>
+                        <td class="p-4 text-right font-semibold text-gray-800">$${p.pventa.toFixed(2)}</td>
+                        <td class="p-4 text-center font-bold">${p.stock}</td>
+                        <td class="p-4 text-center">${badge}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="eliminarProducto(${p.id})" class="text-rose-500 hover:text-rose-700">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderMovimientos() {
+            const tbody = document.getElementById('tabla-movimientos');
+            tbody.innerHTML = '';
+
+            movimientos.slice(-5).reverse().forEach(m => {
+                const prod = productos.find(p => p.id === m.producto_id);
+                const esEntrada = m.tipo === 'ENTRADA';
+                const tagTipo = esEntrada
+                    ? `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold text-xs">ENTRADA</span>`
+                    : `<span class="bg-amber-50 text-amber-600 px-2 py-0.5 rounded font-bold text-xs">SALIDA</span>`;
+
+                const fechaFmt = new Date(m.fecha).toLocaleDateString() + ' ' + new Date(m.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4 text-xs text-gray-400">${fechaFmt}</td>
+                        <td class="p-4">${tagTipo}</td>
+                        <td class="p-4 font-medium">${prod ? prod.nombre : 'Producto Eliminado'}</td>
+                        <td class="p-4 text-center font-semibold">${m.cantidad}</td>
+                        <td class="p-4 text-gray-500">${m.motivo || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filtrarProductos() {
+            const query = document.getElementById('input-buscar').value.toLowerCase();
+            const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query));
+            renderProductos(filtrados);
+        }
+
+        function abrirModalProducto() { document.getElementById('modal-producto').classList.remove('hidden'); }
+        function cerrarModalProducto() { document.getElementById('modal-producto').classList.add('hidden'); }
+
+        function abrirModalMovimiento() {
+            const select = document.getElementById('mov-producto');
+            select.innerHTML = '';
+            productos.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`;
+            });
+            document.getElementById('modal-movimiento').classList.remove('hidden');
+        }
+        function cerrarModalMovimiento() { document.getElementById('modal-movimiento').classList.add('hidden'); }
+
+        function guardarProducto(e) {
+            e.preventDefault();
+            const nuevo = {
+                id: Date.now(),
+                sku: document.getElementById('prod-sku').value,
+                nombre: document.getElementById('prod-nombre').value,
+                categoria: document.getElementById('prod-categoria').value,
+                minimo: parseInt(document.getElementById('prod-minimo').value),
+                pcompra: parseFloat(document.getElementById('prod-pcompra').value),
+                pventa: parseFloat(document.getElementById('prod-pventa').value),
+                stock: parseInt(document.getElementById('prod-stock').value)
+            };
+            productos.push(nuevo);
+            guardarLocal();
+            actualizarTodo();
+            cerrarModalProducto();
+            document.getElementById('form-producto').reset();
+        }
+
+        function guardarMovimiento(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('mov-tipo').value;
+            const productoId = parseInt(document.getElementById('mov-producto').value);
+            const cantidad = parseInt(document.getElementById('mov-cantidad').value);
+            const motivo = document.getElementById('mov-motivo').value;
+
+            const prod = productos.find(p => p.id === productoId);
+            if (!prod) return;
+
+            if (tipo === 'SALIDA' && prod.stock < cantidad) {
+                alert(`Stock insuficiente. Solo hay ${prod.stock} unidades disponibles.`);
+                return;
+            }
+
+            prod.stock = tipo === 'ENTRADA' ? prod.stock + cantidad : prod.stock - cantidad;
+
+            movimientos.push({
+                id: Date.now(),
+                producto_id: productoId,
+                tipo,
+                cantidad,
+                motivo,
+                fecha: new Date().toISOString()
+            });
+
+            guardarLocal();
+            actualizarTodo();
+            cerrarModalMovimiento();
+            document.getElementById('form-movimiento').reset();
+        }
+
+        function eliminarProducto(id) {
+            if (confirm('¿Seguro que deseas eliminar este producto?')) {
+                productos = productos.filter(p => p.id !== id);
+                guardarLocal();
+                actualizarTodo();
+            }
+        }
+
+        function actualizarTodo() {
+            renderProductos();
+            renderMovimientos();
+            calcularFinanzas();
+        }
+
+        // Carga inicial
+        actualizarTodo();
+    </script>
+</body>
+</html>
